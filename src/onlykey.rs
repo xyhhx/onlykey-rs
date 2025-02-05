@@ -1,7 +1,5 @@
-use std::{str, time::SystemTime};
-
-use anyhow::{bail, Result};
-use hidapi::{HidApi, HidDevice, HidResult, MAX_REPORT_DESCRIPTOR_SIZE};
+use anyhow::Result;
+use hidapi::{HidApi, HidDevice, MAX_REPORT_DESCRIPTOR_SIZE};
 use log::{debug, error};
 
 const DEVICE_IDS: [(u16, u16); 2] = [
@@ -10,7 +8,7 @@ const DEVICE_IDS: [(u16, u16); 2] = [
     // OnlyKey Duo
     (0x1d50, 0x60fc),
 ];
-pub const OK_MESSAGE_HEADER: [u8; 5] = [0u8, 255, 255, 255, 255];
+pub const OK_MESSAGE_HEADER: [u8; 4] = [255u8, 255, 255, 255];
 pub const CTAPHID_HEADER: [u8; 7] = [255u8, 255, 255, 255, 0x86, 0, 8];
 const TIMEOUT: i32 = 5000;
 
@@ -35,45 +33,45 @@ pub enum MessageType {
     OkWipeU2FPriv = 233,
     OkWink = 0x08,
 }
+//
+// #[repr(u8)]
+// enum MessageField {
+//     Label = 1,
+//     Url = 15,
+//     Delay1 = 17,
+//     NextKey4 = 18,
+//     Username = 2,
+//     NextKey1 = 16,
+//     NextKey2 = 3,
+//     Delay2 = 4,
+//     Password = 5,
+//     NextKey3 = 6,
+//     Delay3 = 7,
+//     NextKey5 = 19,
+//     TFAType = 8,
+//     TOTPKey = 9,
+//     YubiAuth = 10,
+//     IdleTimeout = 11,
+//     WipeMode = 12,
+//     KeyTypeSpeed = 13,
+//     KeyLayout = 14,
+//     LEDBrightness = 24,
+//     LockButton = 25,
+//     HMACMode = 26,
+//     SysAdminMode = 27,
+//     SecProfileMode = 23,
+//     PGPChallengeMode = 22,
+//     SSHChallengeMode = 21,
+//     BackupMode = 20,
+//     TouchSense = 28,
+// }
 
-#[repr(u8)]
-enum MessageField {
-    Label = 1,
-    Url = 15,
-    Delay1 = 17,
-    NextKey4 = 18,
-    Username = 2,
-    NextKey1 = 16,
-    NextKey2 = 3,
-    Delay2 = 4,
-    Password = 5,
-    NextKey3 = 6,
-    Delay3 = 7,
-    NextKey5 = 19,
-    TFAType = 8,
-    TOTPKey = 9,
-    YubiAuth = 10,
-    IdleTimeout = 11,
-    WipeMode = 12,
-    KeyTypeSpeed = 13,
-    KeyLayout = 14,
-    LEDBrightness = 24,
-    LockButton = 25,
-    HMACMode = 26,
-    SysAdminMode = 27,
-    SecProfileMode = 23,
-    PGPChallengeMode = 22,
-    SSHChallengeMode = 21,
-    BackupMode = 20,
-    TouchSense = 28,
-}
-
-#[repr(u8)]
-enum KeyType {
-    Ed25519,
-    P256,
-    SecP256K1,
-}
+// #[repr(u8)]
+// enum KeyType {
+//     Ed25519,
+//     P256,
+//     SecP256K1,
+// }
 
 pub struct OnlyKey {
     device: HidDevice,
