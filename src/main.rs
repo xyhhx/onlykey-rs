@@ -11,6 +11,7 @@ fn main() -> Result<()> {
 
     let args = Cli::try_parse()?;
 
+    let mut ok = OnlyKey::connect()?;
     match args.command {
         // Commands::Preferences {} => {}
         // Commands::KeyConfiguration(key_config) => {
@@ -28,7 +29,6 @@ fn main() -> Result<()> {
             let ctap_command = ctap.command.unwrap();
             match ctap_command {
                 CtapCommands::Wink => {
-                    let mut ok = OnlyKey::connect()?;
                     ok.wink()?;
                 }
                 CtapCommands::Ping => {
@@ -40,6 +40,8 @@ fn main() -> Result<()> {
             }
         }
     }
+
+    ok.read_as_string()?;
 
     Ok(())
 }
