@@ -1,6 +1,8 @@
+use std::{str, time::SystemTime};
+
 use anyhow::{bail, Result};
-use hidapi::{HidApi, HidDevice};
-use log::debug;
+use hidapi::{HidApi, HidDevice, HidResult, MAX_REPORT_DESCRIPTOR_SIZE};
+use log::{debug, error};
 
 const DEVICE_IDS: [(u16, u16); 2] = [
     // OnlyKey
@@ -8,7 +10,8 @@ const DEVICE_IDS: [(u16, u16); 2] = [
     // OnlyKey Duo
     (0x1d50, 0x60fc),
 ];
-const MESSAGE_HEADER: [u8; 4] = [255u8, 255, 255, 255];
+pub const OK_MESSAGE_HEADER: [u8; 5] = [0u8, 255, 255, 255, 255];
+pub const CTAPHID_HEADER: [u8; 7] = [255u8, 255, 255, 255, 0x86, 0, 8];
 const TIMEOUT: i32 = 5000;
 
 #[repr(u8)]
@@ -79,32 +82,57 @@ pub struct OnlyKey {
 impl OnlyKey {
     pub fn new(device: HidDevice) -> Result<Self> {
         let _ = device.read_timeout(&mut [], 0).is_ok();
+        let _ = Self::get_report_descriptor(&device);
         let ok = OnlyKey { device };
         Ok(ok)
+    }
+
+    fn get_report_descriptor(device: &HidDevice) -> Result<()> {
+        debug!("Getting descriptor details");
+        let mut buf = [0u8; MAX_REPORT_DESCRIPTOR_SIZE];
+        match device.get_report_descriptor(&mut buf) {
+            Ok(length) => debug!(
+                "\tDescriptor:\n\tLength = {:?}\n\tData = {:?}",
+                length,
+                &mut buf[..length]
+            ),
+            Err(error) => error!("\tFailed to retrieve the descriptor: {:?}", error),
+        }
+
+        Ok(())
     }
 
     pub fn connect() -> Result<OnlyKey> {
         debug!("Attempting to connect...");
         let api = HidApi::new()?;
-        let device_info = api
+        let device = api
             .device_list()
-            .find(|dev| DEVICE_IDS.contains(&(dev.vendor_id(), dev.product_id())));
+            .filter(|dev| DEVICE_IDS.contains(&(dev.vendor_id(), dev.product_id())))
+            .find(|dev| {
+                dev.serial_number() == Some("1000000000")
+                    && (dev.usage_page() == 0xFFAB || dev.interface_number() == 2)
+                    || (dev.usage_page() == 0xF1D0 || dev.interface_number() == 1)
+            })
+            .expect("No onlykeys found!")
+            .open_device(&api)?;
 
-        let device = match device_info {
-            Some(d) => {
-                debug!("Found a device at {:?} {:?}", d.vendor_id(), d.product_id());
-                d.open_device(&api)?
-            }
-            None => bail!("No onlykeys found"),
-        };
-
+        debug!(
+            "device: {} {} {} {:#?} {:#?}",
+            device.get_device_info()?.serial_number().unwrap(),
+            device.get_device_info()?.manufacturer_string().unwrap(),
+            device.get_device_info()?.product_string().unwrap(),
+            device.get_device_info()?.path(),
+            device.get_device_info()?
+        );
         let ok = OnlyKey::new(device)?;
+        ok.device.set_blocking_mode(false)?;
 
         Ok(ok)
     }
 
     pub fn write(&mut self, message_type: u8, message: &[u8]) -> Result<()> {
-        let mut payload: Vec<u8> = MESSAGE_HEADER.into();
+        let mut payload: Vec<u8> = OK_MESSAGE_HEADER.into();
+
         payload.push(message_type);
         payload.extend_from_slice(message);
         payload.resize(64, 0);
@@ -121,21 +149,42 @@ impl OnlyKey {
         debug!("Reading from onlykey...");
 
         let mut buffer = vec![0; 64];
-        let response_length = self.device.read_timeout(&mut buffer, TIMEOUT)?;
+        let response_length = self.device.read_timeout(&mut buffer[..], TIMEOUT)?;
+        debug!("Got a response {:?} bytes long", response_length);
+        debug!("Buffer raw: {:x?}", &buffer[..]);
         buffer.resize(response_length, 0);
+        debug!("Buffer padded: {:x?}", &buffer[..]);
 
         Ok(buffer)
     }
 
     pub fn read_as_string(&mut self) -> Result<String> {
-        let s = String::from_utf8(
-            self.read()?
-                .split(|&c| c == 0)
-                .next()
-                .unwrap_or_default()
-                .to_vec(),
-        )?;
+        let output = self
+            .read()?
+            .split(|&c| c == 0)
+            .next()
+            .unwrap_or_default()
+            .to_vec();
+        let s = String::from_utf8(output).unwrap_or_default();
 
         Ok(s)
+    }
+    pub fn get_key_labels(&mut self) -> Result<()> {
+        debug!("Getting key labels");
+        self.write(MessageType::OkGetLabels as u8, &[107])?;
+
+        Ok(())
+    }
+
+    pub fn wink(&mut self) -> Result<()> {
+        debug!("Running wink");
+        // self.device.write(&[255, 255, 255, 255, 134, 0, 8])?;
+        self.device.write(&[
+            0u8, 255, 255, 255, 255, 134, 0, 8, 149, 50, 151, 165, 207, 2, 6, 76, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        ])?;
+
+        Ok(())
     }
 }
