@@ -3,6 +3,7 @@ use clap::Parser;
 use onlykey_rs::{
     cli::{Cli, Commands},
     ctap::cli::handle_ctap_command,
+    ok::cli::cli_handler,
     onlykey::OnlyKey,
 };
 
@@ -11,24 +12,14 @@ fn main() -> Result<()> {
 
     let args = Cli::try_parse()?;
 
-    let mut ok = OnlyKey::connect()?;
+    let ok = OnlyKey::connect()?;
     match args.command {
         // Commands::Preferences {} => {}
-        // Commands::KeyConfiguration(key_config) => {
-        //     let key_config_command = key_config.command.unwrap_or_default();
-        //     match key_config_command {
-        //         KeyConfigurationCommands::GetKeyLabels => {
-        //             let mut ok = OnlyKey::connect()?;
-        //             ok.get_key_labels()?;
-        //         }
-        //     }
-        // }
+        Commands::KeyConfiguration(args) => cli_handler(args, &ok)?,
         // Commands::SSH {} => {}
         // Commands::GPG {} => {}
-        Commands::CTAP(ctap) => handle_ctap_command(ctap, &ok)?,
+        Commands::CTAP(args) => handle_ctap_command(args, &ok)?,
     }
-
-    ok.read_as_string()?;
 
     Ok(())
 }

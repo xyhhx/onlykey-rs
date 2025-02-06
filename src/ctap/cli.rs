@@ -19,12 +19,11 @@ pub enum CtapCommands {
     SetPin,
 }
 
-pub fn handle_ctap_command(ctap: CtapArgs, ok: &OnlyKey) -> Result<()> {
-    let ctap_command = ctap.command.unwrap();
+pub fn handle_ctap_command(args: CtapArgs, ok: &OnlyKey) -> Result<()> {
+    let ctap_command = args.command.unwrap();
     match ctap_command {
-        CtapCommands::Wink => {
-            ok.wink()?;
-        }
+        CtapCommands::Wink => ok.wink()?,
+
         CtapCommands::Ping => {
             // TODO:
         }
@@ -32,5 +31,6 @@ pub fn handle_ctap_command(ctap: CtapArgs, ok: &OnlyKey) -> Result<()> {
             // TODO:
         }
     }
+
     Ok(())
 }

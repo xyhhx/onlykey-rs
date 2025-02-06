@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand};
 
-use crate::ctap::cli::CtapArgs;
+use crate::{ctap::cli::CtapArgs, ok::cli::KeyConfigurationArgs};
 
 #[derive(Parser, Debug)]
 #[command(name = "onlykey-rs", author, version, about, long_about = None)]
@@ -14,7 +14,7 @@ pub enum Commands {
     // #[command(arg_required_else_help = true)]
     // Preferences {},
     //
-    // KeyConfiguration(KeyConfigurationArgs),
+    KeyConfiguration(KeyConfigurationArgs),
     //
     // #[command(arg_required_else_help = true)]
     // SSH {},
@@ -23,17 +23,3 @@ pub enum Commands {
     // GPG {},
     CTAP(CtapArgs),
 }
-
-// #[derive(Debug, Args)]
-// #[command(args_conflicts_with_subcommands = true)]
-// #[command(flatten_help = true)]
-// pub struct KeyConfigurationArgs {
-//     #[command(subcommand)]
-//     command: Option<KeyConfigurationCommands>,
-// }
-//
-// #[derive(Debug, Subcommand)]
-// pub enum KeyConfigurationCommands {
-//     GetKeyLabels,
-// }
-//
