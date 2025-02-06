@@ -19,7 +19,7 @@ pub enum CtapCommands {
     SetPin,
 }
 
-pub fn handle_ctap_command(args: CtapArgs, ok: &OnlyKey) -> Result<()> {
+pub fn cli_handler(args: CtapArgs, ok: &OnlyKey) -> Result<()> {
     let ctap_command = args.command.unwrap();
     match ctap_command {
         CtapCommands::Wink => ok.wink()?,

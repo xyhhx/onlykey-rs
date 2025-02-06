@@ -1,8 +1,14 @@
-use anyhow::Result;
+use std::str::FromStr;
+use std::{thread, time};
+
+use anyhow::{bail, Result};
 use hidapi::HidDevice;
 use log::debug;
 
-use crate::ok::lib::{MessageType, OK_MESSAGE_HEADER, TIMEOUT};
+use crate::{
+    ok::lib::{MessageType, OK_MESSAGE_HEADER, TIMEOUT},
+    utils::read_string_from_bytes,
+};
 
 pub struct OnlyKeyApi;
 
@@ -36,7 +42,17 @@ pub fn read(device: &HidDevice) -> Result<Vec<u8>> {
 
 pub fn get_key_labels(device: &HidDevice) -> Result<()> {
     debug!("Getting key labels");
-    write(&device, MessageType::OkGetLabels as u8, &[107])?;
+    write(device, MessageType::OkGetLabels as u8, &[107])?;
+    thread::sleep(time::Duration::from_millis(100));
+    let message = read_string_from_bytes(read(device)?)?;
+    let data: Vec<&str> = message.split("|").collect();
+    if data.is_empty() {
+        bail!("No keys were returned.");
+    }
+    let slot_number: i32 = i32::from_str(data[0])?;
+    if (25..44).contains(&slot_number) {
+        println!("Slot: {:?} {:?}\n", slot_number, data[1]);
+    }
 
     Ok(())
 }

@@ -2,8 +2,8 @@ use anyhow::Result;
 use clap::Parser;
 use onlykey_rs::{
     cli::{Cli, Commands},
-    ctap::cli::handle_ctap_command,
-    ok::cli::cli_handler,
+    ctap::cli::cli_handler as ctap_handler,
+    ok::cli::cli_handler as ok_handler,
     onlykey::OnlyKey,
 };
 
@@ -15,10 +15,10 @@ fn main() -> Result<()> {
     let ok = OnlyKey::connect()?;
     match args.command {
         // Commands::Preferences {} => {}
-        Commands::KeyConfiguration(args) => cli_handler(args, &ok)?,
+        Commands::KeyConfiguration(args) => ok_handler(args, &ok)?,
         // Commands::SSH {} => {}
         // Commands::GPG {} => {}
-        Commands::CTAP(args) => handle_ctap_command(args, &ok)?,
+        Commands::CTAP(args) => ctap_handler(args, &ok)?,
     }
 
     Ok(())
