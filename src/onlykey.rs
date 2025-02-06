@@ -2,14 +2,15 @@ use anyhow::Result;
 use hidapi::{HidApi, HidDevice, MAX_REPORT_DESCRIPTOR_SIZE};
 use log::{debug, error};
 
-const DEVICE_IDS: [(u16, u16); 2] = [
+use crate::ctap::api::CtapApi;
+
+const OK_DEVICE_IDS: [(u16, u16); 2] = [
     // OnlyKey
     (0x16C0, 0x0486),
     // OnlyKey Duo
     (0x1d50, 0x60fc),
 ];
 pub const OK_MESSAGE_HEADER: [u8; 4] = [255u8, 255, 255, 255];
-pub const CTAPHID_HEADER: [u8; 7] = [255u8, 255, 255, 255, 0x86, 0, 8];
 const TIMEOUT: i32 = 5000;
 
 #[repr(u8)]
@@ -33,45 +34,45 @@ pub enum MessageType {
     OkWipeU2FPriv = 233,
     OkWink = 0x08,
 }
-//
-// #[repr(u8)]
-// enum MessageField {
-//     Label = 1,
-//     Url = 15,
-//     Delay1 = 17,
-//     NextKey4 = 18,
-//     Username = 2,
-//     NextKey1 = 16,
-//     NextKey2 = 3,
-//     Delay2 = 4,
-//     Password = 5,
-//     NextKey3 = 6,
-//     Delay3 = 7,
-//     NextKey5 = 19,
-//     TFAType = 8,
-//     TOTPKey = 9,
-//     YubiAuth = 10,
-//     IdleTimeout = 11,
-//     WipeMode = 12,
-//     KeyTypeSpeed = 13,
-//     KeyLayout = 14,
-//     LEDBrightness = 24,
-//     LockButton = 25,
-//     HMACMode = 26,
-//     SysAdminMode = 27,
-//     SecProfileMode = 23,
-//     PGPChallengeMode = 22,
-//     SSHChallengeMode = 21,
-//     BackupMode = 20,
-//     TouchSense = 28,
-// }
 
-// #[repr(u8)]
-// enum KeyType {
-//     Ed25519,
-//     P256,
-//     SecP256K1,
-// }
+#[repr(u8)]
+enum MessageField {
+    Label = 1,
+    Url = 15,
+    Delay1 = 17,
+    NextKey4 = 18,
+    Username = 2,
+    NextKey1 = 16,
+    NextKey2 = 3,
+    Delay2 = 4,
+    Password = 5,
+    NextKey3 = 6,
+    Delay3 = 7,
+    NextKey5 = 19,
+    TFAType = 8,
+    TOTPKey = 9,
+    YubiAuth = 10,
+    IdleTimeout = 11,
+    WipeMode = 12,
+    KeyTypeSpeed = 13,
+    KeyLayout = 14,
+    LEDBrightness = 24,
+    LockButton = 25,
+    HMACMode = 26,
+    SysAdminMode = 27,
+    SecProfileMode = 23,
+    PGPChallengeMode = 22,
+    SSHChallengeMode = 21,
+    BackupMode = 20,
+    TouchSense = 28,
+}
+
+#[repr(u8)]
+enum KeyType {
+    Ed25519,
+    P256,
+    SecP256K1,
+}
 
 pub struct OnlyKey {
     device: HidDevice,
@@ -105,7 +106,7 @@ impl OnlyKey {
         let api = HidApi::new()?;
         let device = api
             .device_list()
-            .filter(|dev| DEVICE_IDS.contains(&(dev.vendor_id(), dev.product_id())))
+            .filter(|dev| OK_DEVICE_IDS.contains(&(dev.vendor_id(), dev.product_id())))
             .find(|dev| {
                 dev.serial_number() == Some("1000000000")
                     && (dev.usage_page() == 0xFFAB || dev.interface_number() == 2)
@@ -174,14 +175,8 @@ impl OnlyKey {
         Ok(())
     }
 
-    pub fn wink(&mut self) -> Result<()> {
-        debug!("Running wink");
-        // self.device.write(&[255, 255, 255, 255, 134, 0, 8])?;
-        self.device.write(&[
-            0, 17, 0, 0, 0, 136, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0,
-        ])?;
+    pub fn wink(&self) -> Result<()> {
+        CtapApi::wink(&self.device)?;
 
         Ok(())
     }

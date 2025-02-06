@@ -1,8 +1,8 @@
 use anyhow::Result;
 use clap::Parser;
-
 use onlykey_rs::{
-    cli::{Cli, Commands, CtapCommands},
+    cli::{Cli, Commands},
+    ctap::cli::handle_ctap_command,
     onlykey::OnlyKey,
 };
 
@@ -25,20 +25,7 @@ fn main() -> Result<()> {
         // }
         // Commands::SSH {} => {}
         // Commands::GPG {} => {}
-        Commands::CTAP(ctap) => {
-            let ctap_command = ctap.command.unwrap();
-            match ctap_command {
-                CtapCommands::Wink => {
-                    ok.wink()?;
-                }
-                CtapCommands::Ping => {
-                    // TODO:
-                }
-                CtapCommands::SetPin => {
-                    // TODO:
-                }
-            }
-        }
+        Commands::CTAP(ctap) => handle_ctap_command(ctap, &ok)?,
     }
 
     ok.read_as_string()?;
