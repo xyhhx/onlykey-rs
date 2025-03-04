@@ -8,20 +8,20 @@ use crate::onlykey::OnlyKey;
 #[command(args_conflicts_with_subcommands = true)]
 #[command(flatten_help = true)]
 pub struct KeyConfigurationArgs {
-    #[command(subcommand)]
-    command: Option<KeyConfigurationCommands>,
+  #[command(subcommand)]
+  command: Option<KeyConfigurationCommands>,
 }
 
 #[derive(Debug, Subcommand)]
 pub enum KeyConfigurationCommands {
-    GetKeyLabels,
+  GetKeyLabels,
 }
 
 pub fn cli_handler(args: KeyConfigurationArgs, ok: &OnlyKey) -> Result<()> {
-    let key_config_command = args.command.unwrap();
-    match key_config_command {
-        KeyConfigurationCommands::GetKeyLabels => ok.get_key_labels()?,
-    }
+  let key_config_command = args.command.unwrap();
+  match key_config_command {
+    KeyConfigurationCommands::GetKeyLabels => ok.get_key_labels()?,
+  }
 
-    Ok(())
+  Ok(())
 }

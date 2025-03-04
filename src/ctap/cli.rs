@@ -8,29 +8,29 @@ use crate::onlykey::OnlyKey;
 #[command(args_conflicts_with_subcommands = true)]
 #[command(flatten_help = true)]
 pub struct CtapArgs {
-    #[command(subcommand)]
-    pub command: Option<CtapCommands>,
+  #[command(subcommand)]
+  pub command: Option<CtapCommands>,
 }
 
 #[derive(Debug, Subcommand)]
 pub enum CtapCommands {
-    Ping,
-    Wink,
-    SetPin,
+  Ping,
+  Wink,
+  SetPin,
 }
 
 pub fn cli_handler(args: CtapArgs, ok: &OnlyKey) -> Result<()> {
-    let ctap_command = args.command.unwrap();
-    match ctap_command {
-        CtapCommands::Wink => ok.wink()?,
+  let ctap_command = args.command.unwrap();
+  match ctap_command {
+    CtapCommands::Wink => ok.wink()?,
 
-        CtapCommands::Ping => {
-            // TODO:
-        }
-        CtapCommands::SetPin => {
-            // TODO:
-        }
+    CtapCommands::Ping => {
+      // TODO:
     }
+    CtapCommands::SetPin => {
+      // TODO:
+    }
+  }
 
-    Ok(())
+  Ok(())
 }
