@@ -1,11 +1,11 @@
-use std::str::FromStr;
-use std::{char, thread, time};
+use std::{thread, time};
 
 use anyhow::{Error, Result};
 use hidapi::HidDevice;
 use log::debug;
+use strum::IntoEnumIterator;
 
-use crate::ok::lib::{MessageType, OK_MESSAGE_HEADER, TIMEOUT};
+use crate::ok::lib::{KeySlot, MessageType, OK_MESSAGE_HEADER, TIMEOUT};
 
 pub struct OnlyKeyApi;
 
@@ -53,16 +53,40 @@ pub fn get_key_labels(device: &HidDevice) -> Result<()> {
   write(device, MessageType::OkGetLabels as u8, &[107])?;
   thread::sleep(time::Duration::from_millis(100));
 
+  let mut slots: Vec<(u32, String)> = Vec::new();
   for _ in 1..20 {
     let Ok(data) = parse_readout(read(device)?) else {
       continue;
     };
-    let chunks = data.split_once("|").unwrap_or_default();
-    let slot_number = char::from_str(chunks.0)? as i32;
-    dbg!(slot_number);
+    let (slot_number, slot_label) = data.split_once("|").unwrap_or_default();
+    let slot_number = slot_number.as_bytes()[0] as u32;
+
     if (25..44).contains(&slot_number) {
-      println!("Slot: {:?} {:?}", slot_number, chunks.1);
+      let slot_id = match slot_number >= 29 {
+        true => slot_number + 72,
+        false => slot_number - 24,
+      };
+
+      debug!(
+        "found key label:\nslot_label={} slot_number={} slot_id={} ",
+        slot_label, slot_number, slot_id,
+      );
+
+      slots.push((slot_id, String::from(slot_label)));
     }
+  }
+
+  for slot in KeySlot::iter() {
+    println!(
+      "Slot #{} ({}) - {}",
+      slot as u32,
+      slot,
+      slots
+        .iter()
+        .find(|s| s.0 == slot as u32)
+        .unwrap_or(&(0, String::from("")))
+        .1
+    );
   }
 
   Ok(())
