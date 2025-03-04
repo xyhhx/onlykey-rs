@@ -1,4 +1,6 @@
-pub const OK_MESSAGE_HEADER: [u8; 4] = [255u8, 255, 255, 255];
+use serde::{Deserialize, Serialize};
+
+pub const OK_MESSAGE_HEADER: [u8; 4] = [255u8; 4];
 pub const TIMEOUT: i32 = 5000;
 
 #[repr(u8)]
@@ -59,4 +61,30 @@ enum MessageField {
   SSHChallengeMode = 21,
   BackupMode = 20,
   TouchSense = 28,
+}
+
+#[derive(Debug, Deserialize, Serialize, Copy, Clone, PartialEq)]
+#[repr(u8)]
+pub enum KeySlot {
+  RSA1 = 1,
+  RSA2 = 2,
+  RSA3 = 3,
+  RSA4 = 4,
+
+  ECC1 = 101,
+  ECC2 = 102,
+  ECC3 = 103,
+  ECC4 = 104,
+  ECC5 = 105,
+  ECC6 = 106,
+  ECC7 = 107,
+  ECC8 = 108,
+  ECC9 = 109,
+  ECC10 = 110,
+  ECC11 = 111,
+  ECC12 = 112,
+  ECC13 = 113,
+  ECC14 = 114,
+  ECC15 = 115,
+  ECC16 = 116,
 }

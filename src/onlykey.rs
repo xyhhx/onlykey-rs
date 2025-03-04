@@ -1,8 +1,7 @@
 use anyhow::Result;
 use hidapi::{HidApi, HidDevice, MAX_REPORT_DESCRIPTOR_SIZE};
-use log::{debug, error};
+use log::{debug, error, info};
 
-use crate::utils::read_string_from_bytes;
 
 const OK_DEVICE_IDS: [(u16, u16); 2] = [
   // OnlyKey
@@ -45,9 +44,24 @@ impl OnlyKey {
       .device_list()
       .filter(|dev| OK_DEVICE_IDS.contains(&(dev.vendor_id(), dev.product_id())))
       .find(|dev| {
-        dev.serial_number() == Some("1000000000")
-          && (dev.usage_page() == 0xFFAB || dev.interface_number() == 2)
-          || (dev.usage_page() == 0xF1D0 || dev.interface_number() == 1)
+        if dev.serial_number() == Some("1000000000") {
+          if dev.usage_page() == 0xFFAB || dev.interface_number() == 2 {
+            info!(
+              "Found OK device at {}:{}",
+              dev.vendor_id(),
+              dev.product_id()
+            );
+            return true;
+          }
+        } else if dev.usage_page() == 0xF1D0 || dev.interface_number() == 1 {
+          info!(
+            "Found OK device at {}:{}",
+            dev.vendor_id(),
+            dev.product_id()
+          );
+          return true;
+        }
+        false
       })
       .expect("No onlykeys found!")
       .open_device(&api)?;
@@ -60,6 +74,7 @@ impl OnlyKey {
       device.get_device_info()?.path(),
       device.get_device_info()?
     );
+
     let ok = OnlyKey::new(device)?;
     ok.device.set_blocking_mode(false)?;
 
