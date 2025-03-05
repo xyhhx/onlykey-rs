@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use anyhow::Result;
+use anyhow::{Error, Result};
 use hidapi::{HidApi, HidDevice, MAX_REPORT_DESCRIPTOR_SIZE};
 use log::{debug, error, info};
 
@@ -110,6 +110,12 @@ impl OnlyKey {
     self.device.set_blocking_mode(false)?;
 
     Ok(buffer)
+  }
+
+  pub fn parse_readout(&self, bytes: Vec<u8>) -> Result<String> {
+    let s = String::from_utf8(bytes.split(|&c| c == 0).next().unwrap_or_default().to_vec())
+      .map_err(Error::from)?;
+    Ok(s)
   }
 
   pub fn get_key_labels(&self) -> Result<()> {

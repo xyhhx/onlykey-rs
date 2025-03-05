@@ -1,6 +1,6 @@
 use std::{thread, time};
 
-use anyhow::{Error, Result};
+use anyhow::Result;
 use log::debug;
 use strum::IntoEnumIterator;
 
@@ -8,12 +8,6 @@ use crate::ok::types::onlykey_interface::{KeySlot, MessageType, MESSAGE_HEADER};
 use crate::onlykey::OnlyKey;
 
 pub struct OnlyKeyApi;
-
-pub fn parse_readout(bytes: Vec<u8>) -> Result<String> {
-  let s = String::from_utf8(bytes.split(|&c| c == 0).next().unwrap_or_default().to_vec())
-    .map_err(Error::from)?;
-  Ok(s)
-}
 
 pub fn get_key_labels(ok: &OnlyKey) -> Result<()> {
   debug!("Getting key labels");
@@ -33,7 +27,7 @@ pub fn get_key_labels(ok: &OnlyKey) -> Result<()> {
 
   let mut slots: Vec<(u32, String)> = Vec::new();
   for _ in 1..20 {
-    let Ok(data) = parse_readout(ok.read()?) else {
+    let Ok(data) = ok.parse_readout(ok.read()?) else {
       continue;
     };
     let (slot_number, slot_label) = data.split_once("|").unwrap_or_default();
