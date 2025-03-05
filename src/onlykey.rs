@@ -2,6 +2,7 @@ use anyhow::Result;
 use hidapi::{HidApi, HidDevice, MAX_REPORT_DESCRIPTOR_SIZE};
 use log::{debug, error, info};
 
+use crate::ok::lib::TIMEOUT;
 
 const OK_DEVICE_IDS: [(u16, u16); 2] = [
   // OnlyKey
@@ -81,14 +82,46 @@ impl OnlyKey {
     Ok(ok)
   }
 
+  pub fn write(&self, payload: &mut Vec<u8>) -> Result<()> {
+    debug!("Writing {:?}", &payload);
+    debug!("{:x?}", &payload);
+
+    self.device.write(payload)?;
+
+    Ok(())
+  }
+
+  pub fn read(&self) -> Result<Vec<u8>> {
+    self.device.set_blocking_mode(true)?;
+    debug!("Reading from onlykey...");
+
+    let mut buffer = vec![0; 64];
+    let response_length = self.device.read_timeout(&mut buffer, TIMEOUT)?;
+    debug!("Got a response {:?} bytes long", response_length);
+    debug!("Buffer raw: {:x?}", &buffer[..]);
+
+    buffer.resize(response_length, 0);
+    debug!("Buffer padded: {:x?}", &buffer[..]);
+
+    self.device.set_blocking_mode(false)?;
+
+    Ok(buffer)
+  }
+
   pub fn get_key_labels(&self) -> Result<()> {
-    crate::ok::api::get_key_labels(&self.device)?;
+    crate::ok::api::get_key_labels(self)?;
 
     Ok(())
   }
 
   pub fn wink(&self) -> Result<()> {
-    crate::ctap::api::wink(&self.device)?;
+    crate::ctap::api::wink(self)?;
+
+    Ok(())
+  }
+
+  pub fn init_ctap(&self) -> Result<()> {
+    crate::ctap::api::init(self)?;
 
     Ok(())
   }

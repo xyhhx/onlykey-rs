@@ -6,28 +6,9 @@ use log::debug;
 use strum::IntoEnumIterator;
 
 use crate::ok::lib::{KeySlot, MessageType, OK_MESSAGE_HEADER, TIMEOUT};
+use crate::onlykey::OnlyKey;
 
 pub struct OnlyKeyApi;
-
-pub fn write(device: &HidDevice, message_type: u8, message: &[u8]) -> Result<()> {
-  let mut payload: Vec<u8> = [
-    vec![0u8],
-    OK_MESSAGE_HEADER.to_vec(),
-    vec![message_type],
-    message.to_vec(),
-  ]
-  .concat();
-
-  payload.resize(64, 0);
-
-  debug!("Writing {:?}", payload);
-  debug!("{:x?}", payload);
-
-  device.write(&payload)?;
-
-  Ok(())
-}
-
 pub fn read(device: &HidDevice) -> Result<Vec<u8>> {
   device.set_blocking_mode(true)?;
   debug!("Reading from onlykey...");
@@ -39,6 +20,8 @@ pub fn read(device: &HidDevice) -> Result<Vec<u8>> {
   buffer.resize(response_length, 0);
   debug!("Buffer padded: {:x?}", &buffer[..]);
 
+  device.set_blocking_mode(false)?;
+
   Ok(buffer)
 }
 
@@ -48,14 +31,25 @@ pub fn parse_readout(bytes: Vec<u8>) -> Result<String> {
   Ok(s)
 }
 
-pub fn get_key_labels(device: &HidDevice) -> Result<()> {
+pub fn get_key_labels(ok: &OnlyKey) -> Result<()> {
   debug!("Getting key labels");
-  write(device, MessageType::OkGetLabels as u8, &[107])?;
+
+  let mut payload: Vec<u8> = [
+    vec![0u8],
+    OK_MESSAGE_HEADER.to_vec(),
+    vec![MessageType::OkGetLabels as u8],
+    vec![107],
+  ]
+  .concat();
+
+  payload.resize(64, 0);
+
+  ok.write(&mut payload)?;
   thread::sleep(time::Duration::from_millis(100));
 
   let mut slots: Vec<(u32, String)> = Vec::new();
   for _ in 1..20 {
-    let Ok(data) = parse_readout(read(device)?) else {
+    let Ok(data) = parse_readout(ok.read()?) else {
       continue;
     };
     let (slot_number, slot_label) = data.split_once("|").unwrap_or_default();

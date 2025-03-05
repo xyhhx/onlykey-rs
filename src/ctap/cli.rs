@@ -14,6 +14,7 @@ pub struct CtapArgs {
 
 #[derive(Debug, Subcommand)]
 pub enum CtapCommands {
+  Init,
   Ping,
   Wink,
   SetPin,
@@ -23,6 +24,7 @@ pub fn cli_handler(args: CtapArgs, ok: &OnlyKey) -> Result<()> {
   let ctap_command = args.command.unwrap();
   match ctap_command {
     CtapCommands::Wink => ok.wink()?,
+    CtapCommands::Init => ok.init_ctap()?,
 
     CtapCommands::Ping => {
       // TODO:

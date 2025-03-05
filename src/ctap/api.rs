@@ -1,17 +1,38 @@
 use anyhow::Result;
-use hidapi::HidDevice;
 use log::debug;
+use rand::prelude::*;
+use rand_chacha::ChaCha20Rng;
 
-const CTAPHID_HEADER: [u8; 7] = [255u8, 255, 255, 255, 0x86, 0, 8];
+use crate::ctap::lib::CTAPHID_HEADER;
+use crate::onlykey::OnlyKey;
 
-pub fn wink(device: &HidDevice) -> Result<()> {
-  debug!("Running wink");
+pub fn init(ok: &OnlyKey) -> Result<()> {
+  let mut rng = ChaCha20Rng::from_os_rng();
+  let nonce: [u8; 8] = rng.random();
+
+  let mut payload: Vec<u8> = [[0u8].to_vec(), CTAPHID_HEADER.to_vec(), nonce.to_vec()].concat();
+  payload.resize(64, 0u8);
+
+  debug!("Writing {:?}", payload);
+  debug!("{:x?}", payload);
+
+  ok.write(&mut payload)?;
+
+  Ok(())
+}
+
+pub fn wink(ok: &OnlyKey) -> Result<()> {
+  debug!("\n\nRunning wink");
+
   // self.device.write(&[255, 255, 255, 255, 134, 0, 8])?;
-  device.write(&[
-    0, 17, 0, 0, 0, 136, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  let mut payload = vec![
+    0u8, 17, 0, 0, 0, 136, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0,
-  ])?;
+    0, 0, 0,
+  ];
+  debug!("\n\thex={:x?}\n\tchars={:?}", &payload, &payload);
+
+  ok.write(&mut payload)?;
 
   Ok(())
 }
