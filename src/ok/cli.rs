@@ -15,12 +15,14 @@ pub struct KeyConfigurationArgs {
 #[derive(Debug, Subcommand)]
 pub enum KeyConfigurationCommands {
   GetKeyLabels,
+  GetPublicKey,
 }
 
 pub fn cli_handler(args: KeyConfigurationArgs, ok: &OnlyKey) -> Result<()> {
   let key_config_command = args.command.unwrap();
   match key_config_command {
     KeyConfigurationCommands::GetKeyLabels => ok.get_key_labels()?,
+    KeyConfigurationCommands::GetPublicKey => ok.get_pubkey()?,
   }
 
   Ok(())

@@ -1,6 +1,5 @@
 pub mod ctap_hid {
-  pub const HEADER: [u8; 7] = [255u8, 255, 255, 255, 0x86, 0, 8];
-  pub const CHANNEL_IDENTIFIER: u32 = 0xffffffff;
+  pub const BROADCAST_CHANNEL_ID: u32 = 0xffffffff;
 
   pub enum Commands {
     Ping = 0x01,

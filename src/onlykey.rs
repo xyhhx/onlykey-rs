@@ -1,3 +1,4 @@
+use std::env;
 use std::time::Duration;
 
 use anyhow::{Error, Result};
@@ -133,6 +134,11 @@ impl OnlyKey {
   pub fn init_ctap(&self) -> Result<()> {
     crate::ctap::api::init(self)?;
 
+    Ok(())
+  }
+
+  pub fn get_pubkey(&self) -> Result<()> {
+    crate::ok::api::get_pubkey(self, env::var("SSH_IDENTITY")?, true)?;
     Ok(())
   }
 }

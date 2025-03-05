@@ -63,3 +63,8 @@ pub fn get_key_labels(ok: &OnlyKey) -> Result<()> {
 
   Ok(())
 }
+
+pub fn get_pubkey(ok: &OnlyKey, identity: String, ecdh: bool) -> Result<()> {
+  debug!("Getting public key for {:?}", identity);
+  Ok(())
+}
