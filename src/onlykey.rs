@@ -1,8 +1,10 @@
+use std::time::Duration;
+
 use anyhow::Result;
 use hidapi::{HidApi, HidDevice, MAX_REPORT_DESCRIPTOR_SIZE};
 use log::{debug, error, info};
 
-use crate::ok::lib::TIMEOUT;
+const TIMEOUT: Duration = Duration::from_secs(5);
 
 const OK_DEVICE_IDS: [(u16, u16); 2] = [
   // OnlyKey
@@ -96,7 +98,9 @@ impl OnlyKey {
     debug!("Reading from onlykey...");
 
     let mut buffer = vec![0; 64];
-    let response_length = self.device.read_timeout(&mut buffer, TIMEOUT)?;
+    let response_length = self
+      .device
+      .read_timeout(&mut buffer, TIMEOUT.as_nanos() as i32)?;
     debug!("Got a response {:?} bytes long", response_length);
     debug!("Buffer raw: {:x?}", &buffer[..]);
 

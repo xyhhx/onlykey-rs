@@ -7,10 +7,9 @@ use onlykey_rs::onlykey::OnlyKey;
 
 fn main() -> Result<()> {
   pretty_env_logger::init();
-
   let args = Cli::try_parse()?;
-
   let ok = OnlyKey::connect()?;
+
   match args.command {
     // Commands::Preferences {} => {}
     Commands::KeyConfiguration(args) => ok_handler(args, &ok)?,

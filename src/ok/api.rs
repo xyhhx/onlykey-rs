@@ -1,29 +1,13 @@
 use std::{thread, time};
 
 use anyhow::{Error, Result};
-use hidapi::HidDevice;
 use log::debug;
 use strum::IntoEnumIterator;
 
-use crate::ok::lib::{KeySlot, MessageType, OK_MESSAGE_HEADER, TIMEOUT};
+use crate::ok::types::onlykey_interface::{KeySlot, MessageType, MESSAGE_HEADER};
 use crate::onlykey::OnlyKey;
 
 pub struct OnlyKeyApi;
-pub fn read(device: &HidDevice) -> Result<Vec<u8>> {
-  device.set_blocking_mode(true)?;
-  debug!("Reading from onlykey...");
-
-  let mut buffer = vec![0; 64];
-  let response_length = device.read_timeout(&mut buffer, TIMEOUT)?;
-  debug!("Got a response {:?} bytes long", response_length);
-  debug!("Buffer raw: {:x?}", &buffer[..]);
-  buffer.resize(response_length, 0);
-  debug!("Buffer padded: {:x?}", &buffer[..]);
-
-  device.set_blocking_mode(false)?;
-
-  Ok(buffer)
-}
 
 pub fn parse_readout(bytes: Vec<u8>) -> Result<String> {
   let s = String::from_utf8(bytes.split(|&c| c == 0).next().unwrap_or_default().to_vec())
@@ -36,7 +20,7 @@ pub fn get_key_labels(ok: &OnlyKey) -> Result<()> {
 
   let mut payload: Vec<u8> = [
     vec![0u8],
-    OK_MESSAGE_HEADER.to_vec(),
+    MESSAGE_HEADER.to_vec(),
     vec![MessageType::OkGetLabels as u8],
     vec![107],
   ]

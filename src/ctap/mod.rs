@@ -1,3 +1,3 @@
 pub mod api;
 pub mod cli;
-mod lib;
+pub mod types;

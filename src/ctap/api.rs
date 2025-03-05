@@ -3,7 +3,7 @@ use log::debug;
 use rand::prelude::*;
 use rand_chacha::ChaCha20Rng;
 
-use crate::ctap::lib::CTAPHID_HEADER;
+use crate::ctap::types::ctap_hid::HEADER as CTAPHID_HEADER;
 use crate::onlykey::OnlyKey;
 
 pub fn init(ok: &OnlyKey) -> Result<()> {
