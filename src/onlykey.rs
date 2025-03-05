@@ -1,4 +1,3 @@
-use std::env;
 use std::time::Duration;
 
 use anyhow::{Error, Result};
@@ -138,7 +137,10 @@ impl OnlyKey {
   }
 
   pub fn get_pubkey(&self) -> Result<()> {
-    crate::ok::api::get_pubkey(self, env::var("SSH_IDENTITY")?, true)?;
+    // let slip_id = format!("ssh://{}/", env::var("SSH_IDENTITY")?);
+    let slip_id = "https://satoshi@bitcoin.org/login";
+    crate::ok::api::get_pubkey(self, slip_id.to_string(), true)?;
+
     Ok(())
   }
 }

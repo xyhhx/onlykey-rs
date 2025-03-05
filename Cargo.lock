@@ -1074,6 +1074,45 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "875b3680cb2f8f71bdcf9a30f38d48282f5d3c95cbf9b3fa57269bb5d5c06828"
 
 [[package]]
+name = "libcrux-hacl-rs"
+version = "0.0.2-beta.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fb04660b91e0be4185c3a9dd8e2c317c478cc0616f9cba2a4d523e033f852fa1"
+dependencies = [
+ "libcrux-macros",
+]
+
+[[package]]
+name = "libcrux-macros"
+version = "0.0.2-beta.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5848af0bd1aca5be28708945867adb2b841824a0a6f48779407a41287d5ca231"
+dependencies = [
+ "quote",
+ "syn 2.0.99",
+]
+
+[[package]]
+name = "libcrux-sha2"
+version = "0.0.2-beta.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1e20ded20408ff5f8edb7ef583ba8433036877f4081a858d89f612cc7ee99c1a"
+dependencies = [
+ "libcrux-hacl-rs",
+ "libcrux-macros",
+ "libcrux-traits",
+]
+
+[[package]]
+name = "libcrux-traits"
+version = "0.0.2-beta.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5405210cd44a588df9cff5c0161d233c196d192e702d1745d1b28039cc06fb4e"
+dependencies = [
+ "rand 0.9.0",
+]
+
+[[package]]
 name = "libredox"
 version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1363,6 +1402,8 @@ dependencies = [
  "hex",
  "hidapi",
  "hidreport",
+ "libcrux-sha2",
+ "libcrux-traits",
  "log",
  "nusb",
  "pretty_env_logger",

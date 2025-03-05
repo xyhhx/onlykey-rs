@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 pub mod onlykey_interface {
 
   use serde::{Deserialize, Serialize};

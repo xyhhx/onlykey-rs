@@ -1,86 +1,146 @@
-use std::convert::Into;
-
-use anyhow::Result;
+use anyhow::{Ok, Result};
+use libcrux_sha2::sha256;
+use log::debug;
 use regex::Regex;
+
+const _LOGICAL_OR: i32 = 0x80000000u32 as i32;
 
 #[derive(Debug)]
 pub struct Slip0013Identity {
   protocol: String,
-  user: String,
+  user: Option<String>,
   host: String,
   port: Option<String>,
-  path: String,
+  path: Option<String>,
 }
 
-
 impl Slip0013Identity {
-    pub fn new(protocol: &str, user: &str, host: &str, port: Option<&str>, path: &str) -> Self {
-        let protocol = String::from(protocol);
-        let user = String::from(user);
-        let host = String::from(host);
-        let path = String::from(path);
-        let port = port.map(|port| Some(String::from(port))).unwrap_or(None);
-        
-        Slip0013Identity {
-            protocol,
-            user,
-            host,
-            port,
-            path,
-        }
+  #[allow(dead_code)]
+  pub fn new(
+    protocol: &str,
+    user: Option<&str>,
+    host: &str,
+    port: Option<&str>,
+    path: Option<&str>,
+  ) -> Self {
+    let protocol = String::from(protocol);
+    let user = user.map(String::from);
+    let host = String::from(host);
+    let path = path.map(String::from);
+    let port = port.map(String::from);
+
+    Slip0013Identity {
+      protocol,
+      user,
+      host,
+      port,
+      path,
     }
+  }
+}
+
+pub trait Bip32Address {
+  fn get_bip32_address(&self) -> Result<String>;
+  fn to_bip32_address(identity_string: &str) -> Result<String>;
+}
+
+impl Bip32Address for Slip0013Identity {
+  fn get_bip32_address(&self) -> Result<String> {
+    debug!("trying to get bip32 address for {:?}", self);
+    let user = self.user.clone().unwrap_or(String::from(""));
+    let port = self.port.clone().unwrap_or(String::from(""));
+    let path = self.path.clone().unwrap_or(String::from(""));
+    let identity_string = format!(
+      "{}://{}@{}{}{}",
+      self.protocol, &user, self.host, &port, &path
+    );
+
+    Ok(Self::to_bip32_address(&identity_string)?)
+  }
+
+  fn to_bip32_address(id_str: &str) -> Result<String> {
+    debug!("hashing 0{}", id_str);
+    let id_bytes: Vec<u8> = [vec![0u8; 4], Vec::<u8>::from(id_str)].concat();
+    let sha256_hash = sha256(&id_bytes);
+    let hash_128 = &sha256_hash[..16];
+    for chunk in hash_128.chunks_exact(4) {
+      let c: [u8; 4] = chunk.try_into()?;
+      let fuk = &format!("{}{}{}{}", c[0], c[1], c[2], c[3]);
+      debug!(
+        "\n\thash_128 {:?}\n\tchunk {:?}\n\t c {:?}",
+        &hash_128, &chunk, &c,
+      );
+      dbg!(fuk.parse::<u32>()?);
+    }
+    Ok(hex::encode(hash_128))
+  }
 }
 
 impl From<String> for Slip0013Identity {
-    fn from(identity_string: String) -> Self {
-        let re = Regex::new(r"^(?:(?P<proto>.*)://)?(?:(?P<user>.*)@)?(?P<host>.*?)(?::(?P<port>\w*))?(?P<path>/.*)?$").unwrap();
-        let matches = re.captures(&identity_string).unwrap();
+  fn from(identity_string: String) -> Self {
+    debug!("parsing {:?}", &identity_string);
+    let re = Regex::new(
+      r"^(?:(?P<proto>.*)://)?(?:(?P<user>.*)@)?(?P<host>.*?)(?::(?P<port>\w*))?(?P<path>/.*)?$",
+    )
+    .unwrap();
+    let props = re.captures(&identity_string).unwrap();
 
-        Slip0013Identity {
-            protocol: matches["proto"].to_string(),
-            user: matches["user"].to_string(),
-            host: matches["host"].to_string(),
-            port: matches.name("port").and(None),
+    Slip0013Identity {
+      protocol: props.name("proto").map_or("", |m| m.as_str()).to_string(),
+      user: props.name("user").map(|m| m.as_str().to_string()),
+      host: props.name("host").map_or("", |m| m.as_str()).to_string(),
+      port: props.name("port").map(|m| m.as_str().to_string()),
 
-            path: matches["path"].to_string(),
-
-        }
+      path: props.name("path").map(|m| m.as_str().to_string()),
     }
+  }
 }
 
 impl From<&str> for Slip0013Identity {
-    fn from(identity_string: &str) -> Self {
-        Slip0013Identity::from(identity_string.to_string())
-    }
+  fn from(identity_string: &str) -> Self {
+    Slip0013Identity::from(identity_string.to_string())
+  }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use std::any::{Any, TypeId};
+  use std::any::{Any, TypeId};
 
-    #[test]
-    fn has_a_constructor() {
-        let identity = Slip0013Identity::new("https", "satoshi", "bitcoin.org", None, "/");
+  use super::*;
 
-        assert!(is_slip_0013_identity_instance(&identity));
-    }
+  #[test]
+  fn has_a_constructor() {
+    let identity = Slip0013Identity::new("https", Some("satoshi"), "bitcoin.org", None, Some("/"));
 
-    #[test]
-    fn can_parse_identity_string() {
-        // URI  : https://satoshi@bitcoin.org/login
-        let identity = Slip0013Identity::from("https://satoshi@bitcoin.org/login");
-        assert!(is_slip_0013_identity_instance(&identity));
-        assert_eq!(identity.protocol.to_string(), "https");
-        assert_eq!(identity.user.to_string(), "satoshi");
-        assert_eq!(identity.host.to_string(), "bitcoin.org");
-        assert_eq!(identity.path.to_string(), "/login");
-        assert_eq!(identity.port, None);
-    }
+    assert!(is_slip_0013_identity_instance(&identity));
+  }
 
-    fn is_slip_0013_identity_instance<T: ?Sized + Any>(_s: &T) -> bool {
-        TypeId::of::<Slip0013Identity>() == TypeId::of::<T>()
-    }
+  #[test]
+  fn can_parse_identity_string() {
+    // URI  : https://satoshi@bitcoin.org/login
+    let identity = Slip0013Identity::from("https://satoshi@bitcoin.org/login");
+    assert!(is_slip_0013_identity_instance(&identity));
+    assert_eq!(identity.protocol.to_string(), "https");
+    assert_eq!(identity.user.unwrap().to_string(), "satoshi");
+    assert_eq!(identity.host.to_string(), "bitcoin.org");
+    assert_eq!(identity.path.unwrap().to_string(), "/login");
+    assert_eq!(identity.port, None);
+  }
+
+  #[test]
+  fn can_make_bip32_address_from_self() {
+    let identity = Slip0013Identity::from("https://satoshi@bitcoin.org/login");
+    let bip32_address = identity.get_bip32_address();
+
+    assert_eq!(
+      format!("{:?}", bip32_address),
+      "m/2147483661/2637750992/2845082444/3761103859/4005495825"
+    );
+  }
+
+  fn is_slip_0013_identity_instance<T: ?Sized + Any>(_s: &T) -> bool {
+    TypeId::of::<Slip0013Identity>() == TypeId::of::<T>()
+  }
 }
 
 // URI  : https://satoshi@bitcoin.org/login
