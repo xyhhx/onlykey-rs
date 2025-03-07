@@ -4,7 +4,6 @@ use anyhow::Result;
 use log::debug;
 use strum::IntoEnumIterator;
 
-use super::identity::{Bip32Address, Slip0013Identity};
 use crate::ok::types::onlykey_interface::{KeySlot, MessageType, MESSAGE_HEADER};
 use crate::onlykey::OnlyKey;
 
@@ -65,10 +64,10 @@ pub fn get_key_labels(ok: &OnlyKey) -> Result<()> {
   Ok(())
 }
 
-pub fn get_pubkey(_ok: &OnlyKey, identity: String, _ecdh: bool) -> Result<()> {
-  let slip_0013_id = Slip0013Identity::from(identity);
-  let bip32_address = slip_0013_id.as_bip32_address();
-  println!("{:x?}", bip32_address);
+pub fn get_pubkey(_ok: &OnlyKey, _identity: String, _ecdh: bool) -> Result<()> {
+  todo!();
+  // let slip_0013_id = Slip0013Identity::from(identity);
+  // let bip32_address = slip_0013_id.as_bip32_address();
 
-  Ok(())
+  // Ok(())
 }

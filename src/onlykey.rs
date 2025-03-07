@@ -136,10 +136,8 @@ impl OnlyKey {
     Ok(())
   }
 
-  pub fn get_pubkey(&self) -> Result<()> {
-    // let slip_id = format!("ssh://{}/", env::var("SSH_IDENTITY")?);
-    let slip_id = "https://satoshi@bitcoin.org/login";
-    crate::ok::api::get_pubkey(self, slip_id.to_string(), true)?;
+  pub fn get_pubkey(&self, identity: String) -> Result<()> {
+    crate::ok::api::get_pubkey(self, identity, true)?;
 
     Ok(())
   }

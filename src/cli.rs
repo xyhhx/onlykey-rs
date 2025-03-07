@@ -2,6 +2,8 @@ use clap::{Parser, Subcommand};
 
 use crate::ctap::cli::CtapArgs;
 use crate::ok::cli::KeyConfigurationArgs;
+use crate::pgp::cli::PgpArgs;
+use crate::ssh::cli::SshArgs;
 
 #[derive(Parser, Debug)]
 #[command(name = "onlykey-rs", author, version, about, long_about = None)]
@@ -12,15 +14,22 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub enum Commands {
-  // #[command(arg_required_else_help = true)]
-  // Preferences {},
-  //
+  // Preferences,
+  #[command(name = "keys")]
+  #[command(about = "Manage the keys (derived and stored) on your Onlykey")]
   KeyConfiguration(KeyConfigurationArgs),
-  //
-  // #[command(arg_required_else_help = true)]
-  // SSH {},
-  //
-  // #[command(arg_required_else_help = true)]
-  // GPG {},
+  SSH(SshArgs),
+  PGP(PgpArgs),
   CTAP(CtapArgs),
+}
+
+#[cfg(test)]
+mod tests {
+  use clap::CommandFactory;
+
+  use super::*;
+  #[test]
+  fn verify_cli() {
+    Cli::command().debug_assert();
+  }
 }
