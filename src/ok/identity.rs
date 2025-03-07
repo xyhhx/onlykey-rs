@@ -40,12 +40,12 @@ impl Slip0013Identity {
 }
 
 pub trait Bip32Address {
-  fn get_bip32_address(&self) -> Result<String>;
-  fn to_bip32_address(identity_string: &str) -> Result<String>;
+  fn as_bip32_address(&self) -> Result<String>;
+  fn into_bip32_address(identity_string: &str) -> Result<String>;
 }
 
 impl Bip32Address for Slip0013Identity {
-  fn get_bip32_address(&self) -> Result<String> {
+  fn as_bip32_address(&self) -> Result<String> {
     debug!("trying to get bip32 address for {:?}", self);
     let user = self.user.clone().unwrap_or(String::from(""));
     let port = self.port.clone().unwrap_or(String::from(""));
@@ -55,10 +55,10 @@ impl Bip32Address for Slip0013Identity {
       self.protocol, &user, self.host, &port, &path
     );
 
-    Ok(Self::to_bip32_address(&identity_string)?)
+    Ok(Self::into_bip32_address(&identity_string)?)
   }
 
-  fn to_bip32_address(id_str: &str) -> Result<String> {
+  fn into_bip32_address(id_str: &str) -> Result<String> {
     debug!("hashing 0{}", id_str);
     let id_bytes: Vec<u8> = [vec![0u8; 4], Vec::<u8>::from(id_str)].concat();
     let sha256_hash = sha256(&id_bytes);
@@ -107,6 +107,10 @@ mod tests {
 
   use super::*;
 
+  const URI: &str = "https://satoshi@bitcoin.org/login";
+  // const SHA256_HASH: &str = "d0e2389d4c8394a9f3e32de01104bf6e8db2d9e2bb0905d60fffa5a18fd696db";
+  const BIP32_ADDR: &str = "m/2147483661/2637750992/2845082444/3761103859/4005495825";
+
   #[test]
   fn has_a_constructor() {
     let identity = Slip0013Identity::new("https", Some("satoshi"), "bitcoin.org", None, Some("/"));
@@ -116,8 +120,8 @@ mod tests {
 
   #[test]
   fn can_parse_identity_string() {
-    // URI  : https://satoshi@bitcoin.org/login
-    let identity = Slip0013Identity::from("https://satoshi@bitcoin.org/login");
+    let identity = Slip0013Identity::from(URI);
+
     assert!(is_slip_0013_identity_instance(&identity));
     assert_eq!(identity.protocol.to_string(), "https");
     assert_eq!(identity.user.unwrap().to_string(), "satoshi");
@@ -127,14 +131,18 @@ mod tests {
   }
 
   #[test]
-  fn can_make_bip32_address_from_self() {
-    let identity = Slip0013Identity::from("https://satoshi@bitcoin.org/login");
-    let bip32_address = identity.get_bip32_address();
+  fn implements_into_bip32() {
+    let addr = Slip0013Identity::into_bip32_address(URI).unwrap();
 
-    assert_eq!(
-      format!("{}", bip32_address.unwrap()),
-      "m/2147483661/2637750992/2845082444/3761103859/4005495825"
-    );
+    assert_eq!(format!("{}", addr), BIP32_ADDR);
+  }
+
+  #[test]
+  fn can_make_bip32_address_from_self() {
+    let identity = Slip0013Identity::from(URI);
+    let bip32_address = identity.as_bip32_address();
+
+    assert_eq!(format!("{}", bip32_address.unwrap()), BIP32_ADDR);
   }
 
   fn is_slip_0013_identity_instance<T: ?Sized + Any>(_s: &T) -> bool {
@@ -142,9 +150,4 @@ mod tests {
   }
 }
 
-// URI  : https://satoshi@bitcoin.org/login
-// hash : d0e2389d4c8394a9f3e32de01104bf6e8db2d9e2bb0905d60fffa5a18fd696db
-// path : m/2147483661/2637750992/2845082444/3761103859/4005495825
-
-// NOTE: i dont fuck with cryptocurrencies these were just on the docs
-// already
+// NOTE: i dont fuck with cryptocurrencies these were just on the docs already

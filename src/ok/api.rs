@@ -67,7 +67,7 @@ pub fn get_key_labels(ok: &OnlyKey) -> Result<()> {
 
 pub fn get_pubkey(_ok: &OnlyKey, identity: String, _ecdh: bool) -> Result<()> {
   let slip_0013_id = Slip0013Identity::from(identity);
-  let bip32_address = slip_0013_id.get_bip32_address();
+  let bip32_address = slip_0013_id.as_bip32_address();
   println!("{:x?}", bip32_address);
 
   Ok(())
