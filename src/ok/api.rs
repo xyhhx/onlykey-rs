@@ -1,6 +1,6 @@
 use std::{thread, time};
 
-use anyhow::Result;
+use eyre::Result;
 use log::debug;
 use strum::IntoEnumIterator;
 

@@ -1,4 +1,4 @@
-use anyhow::Result;
+use eyre::Result;
 use log::debug;
 use rand::prelude::*;
 use rand_chacha::ChaCha20Rng;

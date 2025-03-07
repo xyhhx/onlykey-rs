@@ -1,4 +1,4 @@
-use anyhow::Result;
+use eyre::Result;
 use clap::{Args, Subcommand};
 
 use crate::onlykey::OnlyKey;

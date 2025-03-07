@@ -1,9 +1,9 @@
-use anyhow::{Ok, Result};
+use eyre::{Ok, Result};
 use libcrux_sha2::sha256;
 use log::debug;
 use regex::Regex;
 
-const _LOGICAL_OR: i32 = 0x80000000u32 as i32;
+const HARD_BYTES_OWO: u32 = 0x80000000u32;
 
 #[derive(Debug)]
 pub struct Slip0013Identity {
@@ -40,11 +40,13 @@ impl Slip0013Identity {
 }
 
 pub trait Bip32Address {
+  #[allow(dead_code)]
   fn as_bip32_address(&self) -> Result<String>;
   fn into_bip32_address(identity_string: &str) -> Result<String>;
 }
 
 impl Bip32Address for Slip0013Identity {
+  #[allow(dead_code)]
   fn as_bip32_address(&self) -> Result<String> {
     debug!("trying to get bip32 address for {:?}", self);
     let user = self.user.clone().unwrap_or(String::from(""));
@@ -63,10 +65,10 @@ impl Bip32Address for Slip0013Identity {
     let id_bytes: Vec<u8> = [vec![0u8; 4], Vec::<u8>::from(id_str)].concat();
     let sha256_hash = sha256(&id_bytes);
     let hash_128 = &sha256_hash[..16];
-    let mut address_n: Vec<u32> = vec![13u32 | 0x80000000u32];
+    let mut address_n: Vec<u32> = vec![13u32 | HARD_BYTES_OWO];
     for chunk in hash_128.chunks_exact(4) {
       let c: [u8; 4] = chunk.try_into()?;
-      address_n.push(u32::from_le_bytes(c) | 0x80000000u32);
+      address_n.push(u32::from_le_bytes(c) | HARD_BYTES_OWO);
     }
 
     Ok(format!(

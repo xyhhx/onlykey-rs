@@ -1,8 +1,8 @@
 use std::time::Duration;
 
-use anyhow::{Error, Result};
-use hidapi::{HidApi, HidDevice, MAX_REPORT_DESCRIPTOR_SIZE};
-use log::{debug, error, info};
+use eyre::{Error, Result};
+use hidapi::{HidApi, HidDevice};
+use log::{debug, info};
 
 const TIMEOUT: Duration = Duration::from_secs(5);
 
@@ -20,24 +20,12 @@ pub struct OnlyKey {
 impl OnlyKey {
   pub fn new(device: HidDevice) -> Result<Self> {
     let _ = device.read_timeout(&mut [], 0).is_ok();
-    let _ = Self::get_report_descriptor(&device);
     let ok = OnlyKey { device };
     Ok(ok)
   }
 
-  fn get_report_descriptor(device: &HidDevice) -> Result<()> {
-    debug!("Getting descriptor details");
-    let mut buf = [0u8; MAX_REPORT_DESCRIPTOR_SIZE];
-    match device.get_report_descriptor(&mut buf) {
-      Ok(length) => debug!(
-        "\tDescriptor:\n\tLength = {:?}\n\tData = {:?}",
-        length,
-        &mut buf[..length]
-      ),
-      Err(error) => error!("\tFailed to retrieve the descriptor: {:?}", error),
-    }
-
-    Ok(())
+  fn _get_report_descriptor(_device: &HidDevice) -> Result<()> {
+    todo!()
   }
 
   pub fn connect() -> Result<OnlyKey> {
@@ -70,12 +58,12 @@ impl OnlyKey {
       .open_device(&api)?;
 
     debug!(
-      "device: {} {} {} {:#?} {:#?}",
+      "device: {} {} {} {:#?}",
       device.get_device_info()?.serial_number().unwrap(),
       device.get_device_info()?.manufacturer_string().unwrap(),
       device.get_device_info()?.product_string().unwrap(),
       device.get_device_info()?.path(),
-      device.get_device_info()?
+      // device.get_device_info()?
     );
 
     let ok = OnlyKey::new(device)?;
