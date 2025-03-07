@@ -63,16 +63,16 @@ impl Bip32Address for Slip0013Identity {
     let id_bytes: Vec<u8> = [vec![0u8; 4], Vec::<u8>::from(id_str)].concat();
     let sha256_hash = sha256(&id_bytes);
     let hash_128 = &sha256_hash[..16];
+    let mut address_n: Vec<u32> = vec![13u32 | 0x80000000u32];
     for chunk in hash_128.chunks_exact(4) {
       let c: [u8; 4] = chunk.try_into()?;
-      let fuk = &format!("{}{}{}{}", c[0], c[1], c[2], c[3]);
-      debug!(
-        "\n\thash_128 {:?}\n\tchunk {:?}\n\t c {:?}",
-        &hash_128, &chunk, &c,
-      );
-      dbg!(fuk.parse::<u32>()?);
+      address_n.push(u32::from_le_bytes(c) | 0x80000000u32);
     }
-    Ok(hex::encode(hash_128))
+
+    Ok(format!(
+      "m/{}/{}/{}/{}/{}",
+      address_n[0], address_n[1], address_n[2], address_n[3], address_n[4]
+    ))
   }
 }
 
@@ -90,7 +90,6 @@ impl From<String> for Slip0013Identity {
       user: props.name("user").map(|m| m.as_str().to_string()),
       host: props.name("host").map_or("", |m| m.as_str()).to_string(),
       port: props.name("port").map(|m| m.as_str().to_string()),
-
       path: props.name("path").map(|m| m.as_str().to_string()),
     }
   }
@@ -133,7 +132,7 @@ mod tests {
     let bip32_address = identity.get_bip32_address();
 
     assert_eq!(
-      format!("{:?}", bip32_address),
+      format!("{}", bip32_address.unwrap()),
       "m/2147483661/2637750992/2845082444/3761103859/4005495825"
     );
   }
